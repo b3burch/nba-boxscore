@@ -53,6 +53,8 @@ Living doc. Anything we want to add but haven't built yet goes here, slotted int
 
 ## Phase 5 — Community / Engagement
 
+- [ ] **Twitter/X account that posts each box score as its own tweet.** This is the growth model the baseball version (boxscore.email) used — see https://x.com/boxscoreemail for the pattern. Each game's final box score gets posted (probably as a single image with the gamebook layout rendered to PNG, since X kills text formatting). A daily kickoff tweet links to the web page; each game tweets independently as it finalizes. Big upside: organic discovery during games, retweets from team fan accounts, free distribution.
+  - Sub-items once we build it: render-to-PNG of the BoxScore component (Vercel OG image or Puppeteer), X API v2 auth + posting, queue logic so we don't tweet a half-finished game, alt-text generation for accessibility.
 - [ ] **RSS feed.**
 - [ ] **iCal feed** of today's games.
 - [ ] **Push notifications** when your favorited team's box is posted (PWA).
@@ -73,6 +75,27 @@ Living doc. Anything we want to add but haven't built yet goes here, slotted int
 *Move things here once they're live in production. Keep this brief — date + one line.*
 
 - _(nothing yet)_
+
+---
+
+## Domain shortlist (priced 2026-05-16)
+
+We're currently on `dailystats-nba.vercel.app`. Real domain candidates that are available right now:
+
+| Domain | Price/yr | Why |
+|---|---|---|
+| `thedailybox.email` | $9.99 | Matches our masthead exactly; `.email` echoes boxscore.email lineage. **Top pick.** |
+| `gamebook.email` | $9.99 | References the NBA Game Book PDF format the layout mimics. Strong concept domain. |
+| `nbabox.email` | $9.99 | Shortest NBA-specific option. |
+| `dailybox.email` | $9.99 | Clean but loses the NBA angle. |
+| `nbagamebook.com` | $11.25 | Descriptive `.com`, on-brand with the PDF reference. |
+| `dailyhardwood.com` | $11.25 | Basketball-coded ("hardwood" = court). Slightly insider. |
+| `statline.email` | $9.99 | Stats-forward framing. |
+| `finalbuzzer.email` | $9.99 | Temporal/post-game framing. Cute but less clear product. |
+
+Taken (so we don't keep searching): `thedailybox.com`, `dailybox.com`, `nbabox.com`, `nbaboxscore.com`, `nbaboxscores.com`, `hardwoodbox.com`, `boxscoredaily.com`, `thebox.email`, `nightlybox.com`, `morningbox.com`, `recapnba.com`, `dailyhoops.com`.
+
+Purchase any of these via Vercel directly (`vercel domains buy <name>`) — no GoDaddy roundtrip needed, DNS auto-configures since we're already deployed there.
 
 ---
 
