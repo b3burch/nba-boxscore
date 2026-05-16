@@ -44,6 +44,16 @@ function findGamesOnDate(
   return [];
 }
 
+function isConditionalPlaceholder(g: {
+  ifNecessary?: boolean;
+  gameStatusText?: string;
+  gameStatus?: number;
+}): boolean {
+  if (!g.ifNecessary) return false;
+  if (g.gameStatus === 3) return false;
+  return (g.gameStatusText ?? "").toUpperCase() === "TBD";
+}
+
 function topN(rows: DailyLeader[], n: number): DailyLeader[] {
   return [...rows].sort((a, b) => b.value - a.value).slice(0, n);
 }
@@ -81,8 +91,10 @@ export async function GET(req: NextRequest) {
     todayGames = findGamesOnDate(schedule, dateEt);
   }
 
+  todayGames = todayGames.filter((g) => !isConditionalPlaceholder(g));
+
   const yesterdayScheduleGames = findGamesOnDate(schedule, ydayEt).filter(
-    (g) => g.gameStatus === 3
+    (g) => g.gameStatus === 3 && !isConditionalPlaceholder(g)
   );
 
   const yesterdayGames: BoxScoreGame[] = [];

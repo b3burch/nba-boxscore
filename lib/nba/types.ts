@@ -17,6 +17,7 @@ export interface ScoreboardGame {
   gameTimeUTC: string;
   gameEt: string;
   regulationPeriods: number;
+  ifNecessary?: boolean;
   seriesGameNumber?: string;
   gameLabel?: string;
   gameSubLabel?: string;
@@ -56,6 +57,7 @@ export interface ScheduleGame {
   gameStatusText: string;
   gameDateTimeUTC: string;
   gameDateTimeEst: string;
+  ifNecessary?: boolean;
   arenaName?: string;
   arenaCity?: string;
   arenaState?: string;
