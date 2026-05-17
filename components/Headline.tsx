@@ -13,15 +13,20 @@ function formatDate(ymd: string): string {
 export default function Headline({
   date,
   season,
+  leagueLabel = "NBA",
 }: {
   date: string;
   season?: string;
+  leagueLabel?: string;
 }) {
   return (
     <header className="headline">
       <div className="masthead">
         <span className="title">The Daily Box</span>
-        <span className="sub">NBA · {season ?? ""}</span>
+        <span className="sub">
+          {leagueLabel}
+          {season ? ` · ${season}` : ""}
+        </span>
       </div>
       <div className="dateline">{formatDate(date)}</div>
     </header>

@@ -1,8 +1,6 @@
-const HEADERS: Record<string, string> = {
+const BASE_HEADERS: Record<string, string> = {
   "User-Agent":
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
-  Referer: "https://www.nba.com/",
-  Origin: "https://www.nba.com",
   Accept: "*/*",
   "Accept-Language": "en-US,en;q=0.9",
 };
@@ -12,14 +10,22 @@ const RETRY_DELAYS_MS = [2_000, 5_000, 15_000];
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-export async function fetchJson<T>(url: string): Promise<T> {
+export async function fetchJson<T>(
+  url: string,
+  referer = "https://www.nba.com/"
+): Promise<T> {
+  const headers: Record<string, string> = {
+    ...BASE_HEADERS,
+    Referer: referer,
+    Origin: referer.replace(/\/$/, ""),
+  };
   let lastErr: unknown;
   for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), DEFAULT_TIMEOUT_MS);
     try {
       const res = await fetch(url, {
-        headers: HEADERS,
+        headers,
         signal: ctrl.signal,
         cache: "no-store",
       });

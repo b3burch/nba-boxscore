@@ -57,6 +57,34 @@ a:hover {
   padding: 1.5rem 1rem 4rem;
 }
 
+/* ---------- League Tabs ---------- */
+.league-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--rule-soft);
+  margin-bottom: 0.75rem;
+}
+.league-tabs .tab {
+  padding: 0.5rem 1rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-soft);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.1s, border-color 0.1s;
+}
+.league-tabs .tab:hover {
+  color: var(--ink);
+}
+.league-tabs .tab.active {
+  color: var(--ink);
+  border-bottom-color: var(--ink);
+  font-weight: 700;
+}
+
 /* ---------- Headline ---------- */
 .headline {
   border-bottom: 3px double var(--rule);

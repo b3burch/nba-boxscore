@@ -1,27 +1,32 @@
 import { fetchJson } from "./client";
+import { LEAGUES, type League } from "./leagues";
 import type {
   CdnBoxScoreResponse,
   CdnScheduleResponse,
   CdnScoreboardResponse,
 } from "./types";
 
-const CDN = "https://cdn.nba.com/static/json";
-
-export function getTodaysScoreboard() {
+export function getTodaysScoreboard(league: League) {
+  const cfg = LEAGUES[league];
   return fetchJson<CdnScoreboardResponse>(
-    `${CDN}/liveData/scoreboard/todaysScoreboard_00.json`
+    `${cfg.cdnHost}/static/json/liveData/scoreboard/todaysScoreboard_${cfg.scoreboardSuffix}.json`,
+    cfg.referer
   );
 }
 
-export function getSeasonSchedule() {
+export function getSeasonSchedule(league: League) {
+  const cfg = LEAGUES[league];
   return fetchJson<CdnScheduleResponse>(
-    `${CDN}/staticData/scheduleLeagueV2.json`
+    `${cfg.cdnHost}/static/json/staticData/scheduleLeagueV2.json`,
+    cfg.referer
   );
 }
 
-export function getBoxScore(gameId: string) {
+export function getBoxScore(gameId: string, league: League) {
+  const cfg = LEAGUES[league];
   return fetchJson<CdnBoxScoreResponse>(
-    `${CDN}/liveData/boxscore/boxscore_${gameId}.json`
+    `${cfg.cdnHost}/static/json/liveData/boxscore/boxscore_${gameId}.json`,
+    cfg.referer
   );
 }
 
@@ -29,12 +34,15 @@ export function decodeSeasonType(gameId: string): SeasonType {
   const prefix = gameId.slice(0, 3);
   switch (prefix) {
     case "001":
+    case "101":
       return "preseason";
     case "002":
+    case "102":
       return "regular";
     case "003":
       return "allstar";
     case "004":
+    case "104":
       return "playoffs";
     case "005":
       return "playin";

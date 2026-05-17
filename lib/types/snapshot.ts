@@ -1,5 +1,6 @@
 import type { BoxScoreGame, ScheduleGame } from "../nba/types";
 import type { StandingRow } from "../nba/standings";
+import type { League } from "../nba/leagues";
 
 export interface DailyLeader {
   personId: number;
@@ -9,6 +10,7 @@ export interface DailyLeader {
 }
 
 export interface DailySnapshot {
+  league: League;
   generatedAt: string;
   dateEt: string;
   yesterdayEt: string;

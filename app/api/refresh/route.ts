@@ -13,6 +13,7 @@ import {
   yesterdayEt,
 } from "@/lib/nba/season";
 import { writeSnapshot } from "@/lib/storage/blob";
+import { ALL_LEAGUES, type League } from "@/lib/nba/leagues";
 import type { DailyLeader, DailySnapshot } from "@/lib/types/snapshot";
 import type {
   BoxScoreGame,
@@ -22,7 +23,7 @@ import type {
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+export const maxDuration = 90;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -58,39 +59,27 @@ function topN(rows: DailyLeader[], n: number): DailyLeader[] {
   return [...rows].sort((a, b) => b.value - a.value).slice(0, n);
 }
 
-export async function GET(req: NextRequest) {
-  if (!isAuthorized(req)) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
-
+async function buildLeagueSnapshot(
+  league: League,
+  now: Date
+): Promise<{ snap: DailySnapshot; errors: string[] }> {
   const errors: string[] = [];
-  const now = new Date();
   const dateEt = todayEt(now);
   const ydayEt = yesterdayEt(now);
 
-  let schedule: CdnScheduleResponse;
-  try {
-    schedule = await getSeasonSchedule();
-  } catch (e) {
-    return NextResponse.json(
-      { error: "schedule fetch failed", detail: String(e) },
-      { status: 502 }
-    );
-  }
-
+  const schedule = await getSeasonSchedule(league);
   await sleep(500);
 
   let todayGames: ScheduleGame[] = [];
   try {
-    const sb = await getTodaysScoreboard();
+    const sb = await getTodaysScoreboard(league);
     todayGames = sb.scoreboard.gameDate === dateEt
       ? (sb.scoreboard.games as unknown as ScheduleGame[])
       : findGamesOnDate(schedule, dateEt);
   } catch (e) {
-    errors.push(`today scoreboard: ${String(e)}`);
+    errors.push(`${league} today scoreboard: ${String(e)}`);
     todayGames = findGamesOnDate(schedule, dateEt);
   }
-
   todayGames = todayGames.filter((g) => !isConditionalPlaceholder(g));
 
   const yesterdayScheduleGames = findGamesOnDate(schedule, ydayEt).filter(
@@ -101,10 +90,10 @@ export async function GET(req: NextRequest) {
   for (const g of yesterdayScheduleGames) {
     await sleep(1100);
     try {
-      const bs = await getBoxScore(g.gameId);
+      const bs = await getBoxScore(g.gameId, league);
       yesterdayGames.push(bs.game);
     } catch (e) {
-      errors.push(`boxscore ${g.gameId}: ${String(e)}`);
+      errors.push(`${league} boxscore ${g.gameId}: ${String(e)}`);
     }
   }
 
@@ -127,9 +116,10 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  const standings = computeStandings(schedule, "regular");
+  const standings = computeStandings(schedule, league, "regular");
 
   const snap: DailySnapshot = {
+    league,
     generatedAt: now.toISOString(),
     dateEt,
     yesterdayEt: ydayEt,
@@ -145,25 +135,51 @@ export async function GET(req: NextRequest) {
     },
     errors,
   };
+  return { snap, errors };
+}
 
-  try {
-    await writeSnapshot(snap);
-  } catch (e) {
-    return NextResponse.json(
-      { error: "snapshot write failed", detail: String(e) },
-      { status: 500 }
-    );
+export async function GET(req: NextRequest) {
+  if (!isAuthorized(req)) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  return NextResponse.json({
-    ok: true,
-    mode: process.env.BLOB_READ_WRITE_TOKEN ? "blob" : "local",
-    dateEt,
-    yesterdayGames: yesterdayGames.length,
-    todayGames: todayGames.length,
-    standings: standings.length,
-    errors,
-  });
+  const now = new Date();
+  const results: Array<{
+    league: League;
+    status: "ok" | "failed";
+    yesterdayGames?: number;
+    todayGames?: number;
+    standings?: number;
+    errors?: string[];
+    detail?: string;
+  }> = [];
+
+  for (const league of ALL_LEAGUES) {
+    try {
+      const { snap } = await buildLeagueSnapshot(league, now);
+      await writeSnapshot(snap);
+      results.push({
+        league,
+        status: "ok",
+        yesterdayGames: snap.yesterdayGames.length,
+        todayGames: snap.todayGames.length,
+        standings: snap.standings.length,
+        errors: snap.errors,
+      });
+    } catch (e) {
+      results.push({ league, status: "failed", detail: String(e) });
+    }
+  }
+
+  const anyFailed = results.some((r) => r.status === "failed");
+  return NextResponse.json(
+    {
+      ok: !anyFailed,
+      mode: process.env.BLOB_READ_WRITE_TOKEN ? "blob" : "local",
+      results,
+    },
+    { status: anyFailed ? 207 : 200 }
+  );
 }
 
 export async function POST(req: NextRequest) {

@@ -14,12 +14,17 @@ function fmtPct(p: number): string {
   return p.toFixed(3).replace(/^0/, "");
 }
 
-function DivTable({ rows, division }: { rows: StandingRow[]; division: string }) {
-  const teams = rows.filter((r) => r.division === division);
-  if (teams.length === 0) return null;
+function StandingsTable({
+  rows,
+  caption,
+}: {
+  rows: StandingRow[];
+  caption?: string;
+}) {
+  if (rows.length === 0) return null;
   return (
     <div className="div-table">
-      <h4>{division}</h4>
+      {caption && <h4>{caption}</h4>}
       <table className="standings">
         <thead>
           <tr>
@@ -36,7 +41,7 @@ function DivTable({ rows, division }: { rows: StandingRow[]; division: string })
           </tr>
         </thead>
         <tbody>
-          {teams.map((t) => (
+          {rows.map((t) => (
             <tr key={t.teamId}>
               <td className="t">{t.tricode}</td>
               <td>{t.wins}</td>
@@ -67,21 +72,42 @@ function DivTable({ rows, division }: { rows: StandingRow[]; division: string })
 
 export default function Standings({ rows }: { rows: StandingRow[] }) {
   if (rows.length === 0) return null;
+  const hasDivisions = rows.some((r) => r.division !== "");
   return (
     <section className="section standings-section">
       <h2>Standings</h2>
       <div className="conf-grid">
         <div>
           <h3>Eastern Conference</h3>
-          {DIVISIONS.East.map((d) => (
-            <DivTable key={d} rows={rows} division={d} />
-          ))}
+          {hasDivisions ? (
+            DIVISIONS.East.map((d) => (
+              <StandingsTable
+                key={d}
+                rows={rows.filter(
+                  (r) => r.conference === "East" && r.division === d
+                )}
+                caption={d}
+              />
+            ))
+          ) : (
+            <StandingsTable rows={rows.filter((r) => r.conference === "East")} />
+          )}
         </div>
         <div>
           <h3>Western Conference</h3>
-          {DIVISIONS.West.map((d) => (
-            <DivTable key={d} rows={rows} division={d} />
-          ))}
+          {hasDivisions ? (
+            DIVISIONS.West.map((d) => (
+              <StandingsTable
+                key={d}
+                rows={rows.filter(
+                  (r) => r.conference === "West" && r.division === d
+                )}
+                caption={d}
+              />
+            ))
+          ) : (
+            <StandingsTable rows={rows.filter((r) => r.conference === "West")} />
+          )}
         </div>
       </div>
     </section>

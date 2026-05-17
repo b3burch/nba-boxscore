@@ -1,4 +1,5 @@
 import type { CdnScheduleResponse, ScheduleGame } from "./types";
+import { LEAGUES, type League } from "./leagues";
 
 export interface StandingRow {
   teamId: number;
@@ -23,10 +24,7 @@ export interface StandingRow {
   streak: string;
 }
 
-const TEAM_META: Record<
-  number,
-  { conf: "East" | "West"; div: string }
-> = {
+const NBA_TEAM_META: Record<number, { conf: "East" | "West"; div: string }> = {
   1610612737: { conf: "East", div: "Southeast" }, // ATL
   1610612738: { conf: "East", div: "Atlantic" }, // BOS
   1610612751: { conf: "East", div: "Atlantic" }, // BKN
@@ -59,8 +57,37 @@ const TEAM_META: Record<
   1610612764: { conf: "East", div: "Southeast" }, // WAS
 };
 
-function emptyRow(teamId: number, tricode: string, city: string, name: string): StandingRow {
-  const meta = TEAM_META[teamId] ?? { conf: "East" as const, div: "Atlantic" };
+const WNBA_TEAM_META: Record<number, { conf: "East" | "West"; div: string }> = {
+  1611661313: { conf: "East", div: "" }, // NYL
+  1611661317: { conf: "West", div: "" }, // PHX
+  1611661319: { conf: "West", div: "" }, // LVA
+  1611661320: { conf: "West", div: "" }, // LAS
+  1611661321: { conf: "West", div: "" }, // DAL
+  1611661322: { conf: "East", div: "" }, // WAS
+  1611661323: { conf: "East", div: "" }, // CON
+  1611661324: { conf: "West", div: "" }, // MIN
+  1611661325: { conf: "East", div: "" }, // IND
+  1611661327: { conf: "West", div: "" }, // PDX (Portland Fire)
+  1611661328: { conf: "West", div: "" }, // SEA
+  1611661329: { conf: "East", div: "" }, // CHI
+  1611661330: { conf: "East", div: "" }, // ATL
+  1611661331: { conf: "West", div: "" }, // GSV
+  1611661332: { conf: "East", div: "" }, // TOR (Tempo)
+};
+
+function teamMeta(league: League, teamId: number) {
+  const table = league === "wnba" ? WNBA_TEAM_META : NBA_TEAM_META;
+  return table[teamId];
+}
+
+function emptyRow(
+  league: League,
+  teamId: number,
+  tricode: string,
+  city: string,
+  name: string
+): StandingRow {
+  const meta = teamMeta(league, teamId) ?? { conf: "East" as const, div: "" };
   return {
     teamId,
     tricode,
@@ -87,12 +114,13 @@ function emptyRow(teamId: number, tricode: string, city: string, name: string): 
 
 export function computeStandings(
   schedule: CdnScheduleResponse,
+  league: League,
   seasonTypeFilter: "regular" | "playoffs" = "regular"
 ): StandingRow[] {
   const rows = new Map<number, StandingRow>();
   const recentResults = new Map<number, ("W" | "L")[]>();
-
-  const seasonPrefix = seasonTypeFilter === "regular" ? "002" : "004";
+  const seasonPrefix = LEAGUES[league].seasonTypePrefix[seasonTypeFilter];
+  const knownTeams = league === "wnba" ? WNBA_TEAM_META : NBA_TEAM_META;
 
   const finishedGames: ScheduleGame[] = [];
   for (const day of schedule.leagueSchedule.gameDates) {
@@ -100,6 +128,8 @@ export function computeStandings(
       if (!g.gameId.startsWith(seasonPrefix)) continue;
       if (g.gameStatus !== 3) continue;
       if (g.homeTeam.score === 0 && g.awayTeam.score === 0) continue;
+      if (!(g.homeTeam.teamId in knownTeams)) continue;
+      if (!(g.awayTeam.teamId in knownTeams)) continue;
       finishedGames.push(g);
     }
   }
@@ -109,7 +139,10 @@ export function computeStandings(
   for (const g of finishedGames) {
     for (const t of [g.homeTeam, g.awayTeam]) {
       if (!rows.has(t.teamId)) {
-        rows.set(t.teamId, emptyRow(t.teamId, t.teamTricode, t.teamCity, t.teamName));
+        rows.set(
+          t.teamId,
+          emptyRow(league, t.teamId, t.teamTricode, t.teamCity, t.teamName)
+        );
         recentResults.set(t.teamId, []);
       }
     }
@@ -165,12 +198,13 @@ export function computeStandings(
       t.gb =
         leader === t
           ? 0
-          : ((leader.wins - t.wins) + (t.losses - leader.losses)) / 2;
+          : (leader.wins - t.wins + (t.losses - leader.losses)) / 2;
     }
   }
 
   return all.sort((a, b) => {
-    if (a.conference !== b.conference) return a.conference < b.conference ? -1 : 1;
+    if (a.conference !== b.conference)
+      return a.conference < b.conference ? -1 : 1;
     if (a.division !== b.division) return a.division < b.division ? -1 : 1;
     return b.pct - a.pct;
   });
