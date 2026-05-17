@@ -384,9 +384,18 @@ a:hover {
 .box-table tr.dnp td {
   color: var(--ink-soft);
   font-style: italic;
+  font-size: 0.68rem;
+  padding-top: 0.1rem;
+  padding-bottom: 0.1rem;
+}
+.box-table tr.dnp td.player {
+  font-style: italic;
+  font-weight: 400;
 }
 .box-table tr.dnp td.dnp-reason {
   text-align: left;
+  text-transform: lowercase;
+  letter-spacing: 0.02em;
 }
 .box-table td.pos {
   color: #2e7d32;

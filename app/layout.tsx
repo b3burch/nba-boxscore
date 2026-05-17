@@ -16,8 +16,12 @@ const mono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "The Daily Box — NBA",
-  description: "Daily NBA box scores in the official Game Book layout.",
+  title: {
+    template: "%s | The Daily Box",
+    default: "The Daily Box",
+  },
+  description:
+    "Daily NBA and WNBA box scores in the official Game Book layout.",
 };
 
 export default function RootLayout({
