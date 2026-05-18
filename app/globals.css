@@ -391,6 +391,21 @@ a:hover {
 .box-table .pos {
   color: var(--ink-soft);
 }
+.box-table tr.dnp td {
+  color: var(--ink-soft);
+  font-style: italic;
+}
+.box-table tr.dnp td.player {
+  font-weight: 400;
+}
+.box-table tr.dnp td.dnp-min {
+  font-weight: 600;
+  font-style: normal;
+}
+.box-table tr.totals + tr.dnp td {
+  border-top: 1px dotted var(--rule-soft);
+}
+
 .inactive-line {
   margin-top: 0.4rem;
   padding: 0.4rem 0.2rem 0;

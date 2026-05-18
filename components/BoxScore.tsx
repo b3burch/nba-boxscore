@@ -6,6 +6,10 @@ function pct(made: number, att: number): string {
   return `.${Math.round((made / att) * 1000).toString().padStart(3, "0")}`;
 }
 
+function isInactive(p: BoxPlayer): boolean {
+  return (p.notPlayingReason ?? "").toUpperCase().startsWith("INACTIVE");
+}
+
 function PlayerRow({ p }: { p: BoxPlayer }) {
   const s = p.statistics;
   return (
@@ -34,9 +38,39 @@ function PlayerRow({ p }: { p: BoxPlayer }) {
   );
 }
 
+function DnpRow({ p }: { p: BoxPlayer }) {
+  return (
+    <tr className="dnp">
+      <td className="player">
+        {p.name} <span className="pos">{p.position}</span>
+      </td>
+      <td className="dnp-min">DNP</td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
+    </tr>
+  );
+}
+
 function TeamTable({ team }: { team: BoxTeam }) {
   const sorted = sortRoster(team.players);
   const playedPlayers = sorted.filter((p) => p.played === "1");
+  const dnpPlayers = sorted.filter(
+    (p) => p.played !== "1" && !isInactive(p)
+  );
+  const inactivePlayers = sorted.filter(
+    (p) => p.played !== "1" && isInactive(p)
+  );
   const t = teamTotals(team.players);
   return (
     <div className="box-team">
@@ -91,10 +125,13 @@ function TeamTable({ team }: { team: BoxTeam }) {
               <td>-</td>
               <td className="pts">{t.pts}</td>
             </tr>
+            {dnpPlayers.map((p) => (
+              <DnpRow key={p.personId} p={p} />
+            ))}
           </tbody>
         </table>
       </div>
-      <InactiveLine players={sorted.filter((p) => p.played !== "1")} />
+      <InactiveLine players={inactivePlayers} />
     </div>
   );
 }
@@ -102,15 +139,13 @@ function TeamTable({ team }: { team: BoxTeam }) {
 function InactiveLine({ players }: { players: BoxPlayer[] }) {
   if (players.length === 0) return null;
   const items = players.map((p) => {
-    const reason = p.notPlayingReason
-      ? p.notPlayingReason.replace(/_/g, " ").toLowerCase()
-      : "dnp";
-    return `${p.name} (${reason})`;
+    const raw = (p.notPlayingReason ?? "").replace(/^INACTIVE_?/i, "");
+    const reason = raw ? raw.replace(/_/g, " ").toLowerCase() : "";
+    return reason ? `${p.name} (${reason})` : p.name;
   });
   return (
     <p className="inactive-line">
-      <span className="inactive-label">DNP / Inactive</span>{" "}
-      {items.join(" · ")}
+      <span className="inactive-label">Inactive</span> {items.join(" · ")}
     </p>
   );
 }
