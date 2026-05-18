@@ -41,8 +41,7 @@ Living doc. Anything we want to add but haven't built yet goes here, slotted int
 - [ ] **Quarter-by-quarter team stats** (pace, FG% per Q).
 - [ ] **Plus/minus heatmap** showing on-court combinations.
 - [ ] **Lineup data** (5-man combinations + minutes).
-- [ ] **WNBA daily box.** Same architecture, different `leagueId`. Could share most of the codebase.
-- [ ] **G League / Summer League.** Lower priority but easy if we already do WNBA.
+- [ ] **G League / Summer League.** Lower priority but easy now that the multi-league plumbing is in.
 
 ## Phase 4 — Editorial
 
@@ -74,7 +73,7 @@ Living doc. Anything we want to add but haven't built yet goes here, slotted int
 
 *Move things here once they're live in production. Keep this brief — date + one line.*
 
-- _(nothing yet)_
+- **2026-05-18** — WNBA as a second tab. Same gamebook layout, conference standings (no divisions), `cdn.wnba.com` data, shared daily refresh.
 
 ---
 
