@@ -394,18 +394,22 @@ a:hover {
 .box-table tr.dnp td {
   color: var(--ink-soft);
   font-style: italic;
-  font-size: 0.68rem;
-  padding-top: 0.1rem;
-  padding-bottom: 0.1rem;
+  padding-top: 0.12rem;
+  padding-bottom: 0.12rem;
+  opacity: 0.75;
 }
 .box-table tr.dnp td.player {
-  font-style: italic;
   font-weight: 400;
+  padding-left: 0.4rem;
 }
 .box-table tr.dnp td.dnp-reason {
   text-align: left;
   text-transform: lowercase;
   letter-spacing: 0.02em;
+}
+.box-table tr.dnp + tr:not(.dnp) td,
+.box-table tr.totals + tr.dnp td {
+  border-top: 1px dotted var(--rule-soft);
 }
 .box-table td.pos {
   color: #2e7d32;
