@@ -8,21 +8,6 @@ function pct(made: number, att: number): string {
 
 function PlayerRow({ p }: { p: BoxPlayer }) {
   const s = p.statistics;
-  const played = p.played === "1";
-  if (!played) {
-    const reason = p.notPlayingReason
-      ? p.notPlayingReason.replace(/_/g, " ").toLowerCase()
-      : "dnp";
-    return (
-      <tr className="dnp">
-        <td colSpan={15} className="dnp-cell">
-          <span className="dnp-name">{p.name}</span>
-          <span className="dnp-sep"> — </span>
-          <span className="dnp-reason">{reason}</span>
-        </td>
-      </tr>
-    );
-  }
   return (
     <tr className={p.starter === "1" ? "starter" : ""}>
       <td className="player">
@@ -106,13 +91,27 @@ function TeamTable({ team }: { team: BoxTeam }) {
               <td>-</td>
               <td className="pts">{t.pts}</td>
             </tr>
-            {sorted.filter((p) => p.played !== "1").map((p) => (
-              <PlayerRow key={p.personId} p={p} />
-            ))}
           </tbody>
         </table>
       </div>
+      <InactiveLine players={sorted.filter((p) => p.played !== "1")} />
     </div>
+  );
+}
+
+function InactiveLine({ players }: { players: BoxPlayer[] }) {
+  if (players.length === 0) return null;
+  const items = players.map((p) => {
+    const reason = p.notPlayingReason
+      ? p.notPlayingReason.replace(/_/g, " ").toLowerCase()
+      : "dnp";
+    return `${p.name} (${reason})`;
+  });
+  return (
+    <p className="inactive-line">
+      <span className="inactive-label">DNP / Inactive</span>{" "}
+      {items.join(" · ")}
+    </p>
   );
 }
 
