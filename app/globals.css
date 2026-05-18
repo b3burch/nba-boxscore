@@ -391,23 +391,26 @@ a:hover {
 .box-table .pos {
   color: var(--ink-soft);
 }
-.box-table tr.dnp td {
+.box-table tr.dnp td.dnp-cell {
+  text-align: left;
   color: var(--ink-soft);
   font-style: italic;
-  padding-top: 0.12rem;
-  padding-bottom: 0.12rem;
+  padding: 0.18rem 0.4rem;
   opacity: 0.75;
+  position: sticky;
+  left: 0;
+  background: var(--paper);
 }
-.box-table tr.dnp td.player {
+.box-table tr.dnp .dnp-name {
   font-weight: 400;
-  padding-left: 0.4rem;
 }
-.box-table tr.dnp td.dnp-reason {
-  text-align: left;
+.box-table tr.dnp .dnp-sep {
+  color: var(--rule-soft);
+}
+.box-table tr.dnp .dnp-reason {
   text-transform: lowercase;
   letter-spacing: 0.02em;
 }
-.box-table tr.dnp + tr:not(.dnp) td,
 .box-table tr.totals + tr.dnp td {
   border-top: 1px dotted var(--rule-soft);
 }

@@ -10,13 +10,15 @@ function PlayerRow({ p }: { p: BoxPlayer }) {
   const s = p.statistics;
   const played = p.played === "1";
   if (!played) {
+    const reason = p.notPlayingReason
+      ? p.notPlayingReason.replace(/_/g, " ").toLowerCase()
+      : "dnp";
     return (
       <tr className="dnp">
-        <td className="player">
-          {p.name} <span className="pos">{p.position}</span>
-        </td>
-        <td colSpan={14} className="dnp-reason">
-          {p.notPlayingReason ? p.notPlayingReason.replace(/_/g, " ").toLowerCase() : "DNP"}
+        <td colSpan={15} className="dnp-cell">
+          <span className="dnp-name">{p.name}</span>
+          <span className="dnp-sep"> — </span>
+          <span className="dnp-reason">{reason}</span>
         </td>
       </tr>
     );
