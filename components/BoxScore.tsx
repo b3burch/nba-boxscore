@@ -153,6 +153,12 @@ function LineScore({ game }: { game: BoxScoreGame }) {
   );
 }
 
+function gamebookUrl(gameId: string): string {
+  return gameId.startsWith("1")
+    ? "https://stats.wnba.com/gamebooks"
+    : "https://www.nba.com/stats/gamebooks";
+}
+
 export default function BoxScore({ game }: { game: BoxScoreGame }) {
   const dateLine = new Date(game.gameTimeUTC).toLocaleDateString("en-US", {
     weekday: "long",
@@ -172,6 +178,15 @@ export default function BoxScore({ game }: { game: BoxScoreGame }) {
         </h3>
         <p className="venue">
           {game.arena.arenaName}, {game.arena.arenaCity} · {dateLine}
+          {" · "}
+          <a
+            href={gamebookUrl(game.gameId)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="gamebook-link"
+          >
+            View Full Game Book ↗
+          </a>
         </p>
       </header>
       <LineScore game={game} />

@@ -276,6 +276,14 @@ a:hover {
   letter-spacing: 0.06em;
   margin: 0.25rem 0 0.75rem;
 }
+.box-header .gamebook-link {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--accent);
+}
+.box-header .gamebook-link:hover {
+  border-bottom-style: solid;
+}
 
 .line-score {
   font-family: var(--font-mono), monospace;
