@@ -153,11 +153,7 @@ function LineScore({ game }: { game: BoxScoreGame }) {
   );
 }
 
-function gamebookUrl(gameId: string): string {
-  return gameId.startsWith("1")
-    ? "https://stats.wnba.com/gamebooks"
-    : "https://www.nba.com/stats/gamebooks";
-}
+const GAMEBOOK_URL = "https://www.nba.com/stats/gamebooks";
 
 export default function BoxScore({ game }: { game: BoxScoreGame }) {
   const dateLine = new Date(game.gameTimeUTC).toLocaleDateString("en-US", {
@@ -180,7 +176,7 @@ export default function BoxScore({ game }: { game: BoxScoreGame }) {
           {game.arena.arenaName}, {game.arena.arenaCity} · {dateLine}
           {" · "}
           <a
-            href={gamebookUrl(game.gameId)}
+            href={GAMEBOOK_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="gamebook-link"
