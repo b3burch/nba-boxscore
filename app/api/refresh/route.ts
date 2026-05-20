@@ -70,32 +70,40 @@ async function buildLeagueSnapshot(
   const schedule = await getSeasonSchedule(league);
   await sleep(500);
 
-  // Pull live scoreboard so we can detect completions in real time.
-  let todayGames: ScheduleGame[] = [];
-  let todayCompletedIds: string[] = [];
+  // Pull the live scoreboard. It tracks NBA's current active game day, which is
+  // today during the day/evening but can still be *yesterday* in the small hours
+  // (NBA doesn't roll the slate over until well after the last game ends). Read
+  // completions straight from it so late games that finish after midnight ET show
+  // up immediately, instead of waiting on the static schedule file to update.
+  let scoreboardDate = "";
+  let scoreboardGames: ScheduleGame[] = [];
+  let scoreboardCompletedIds: string[] = [];
   try {
     const sb = await getTodaysScoreboard(league);
-    if (sb.scoreboard.gameDate === dateEt) {
-      todayGames = sb.scoreboard.games as unknown as ScheduleGame[];
-      todayCompletedIds = todayGames
-        .filter((g) => g.gameStatus === 3 && !isConditionalPlaceholder(g))
-        .map((g) => g.gameId);
-    } else {
-      todayGames = findGamesOnDate(schedule, dateEt);
-    }
+    scoreboardDate = sb.scoreboard.gameDate;
+    scoreboardGames = sb.scoreboard.games as unknown as ScheduleGame[];
+    scoreboardCompletedIds = scoreboardGames
+      .filter((g) => g.gameStatus === 3 && !isConditionalPlaceholder(g))
+      .map((g) => g.gameId);
   } catch (e) {
     errors.push(`${league} today scoreboard: ${String(e)}`);
-    todayGames = findGamesOnDate(schedule, dateEt);
   }
+
+  // Today's slate for the sidebar (live if the scoreboard is on today, else schedule).
+  let todayGames: ScheduleGame[] =
+    scoreboardDate === dateEt ? scoreboardGames : findGamesOnDate(schedule, dateEt);
   todayGames = todayGames.filter((g) => !isConditionalPlaceholder(g));
 
-  // Coverage slate: today once any of today's games has gone final, else yesterday.
-  // This flips the newspaper forward as soon as the first game of the night ends.
+  // Coverage slate = the most recent slate that has at least one final game.
+  // Prefer the live scoreboard's day whenever it has a completion (covers both
+  // today's in-progress slate and last night's late finishers), otherwise fall
+  // back to yesterday's schedule. The newspaper therefore shows yesterday until
+  // the first game of the current slate goes final, then flips and grows from there.
   let coverageDate: string;
   let coverageGameIds: string[];
-  if (todayCompletedIds.length > 0) {
-    coverageDate = dateEt;
-    coverageGameIds = todayCompletedIds;
+  if (scoreboardCompletedIds.length > 0) {
+    coverageDate = scoreboardDate;
+    coverageGameIds = scoreboardCompletedIds;
   } else {
     coverageDate = ydayEt;
     coverageGameIds = findGamesOnDate(schedule, ydayEt)
