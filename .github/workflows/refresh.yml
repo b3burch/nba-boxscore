@@ -1,0 +1,51 @@
+name: Refresh box scores
+
+# Vercel Hobby caps Vercel Cron at one run per day, so we drive the
+# in-game refresh cadence from GitHub Actions instead. The route at
+# /api/refresh handles authorization via the same CRON_SECRET that
+# Vercel Cron uses, so this is just a second caller of the same endpoint.
+#
+# Schedule covers NBA game hours: ~6pm ET tip-off through ~3am ET
+# (when even West-coast OTs are done). That's 22:00 UTC through 07:00
+# UTC the next day. GitHub Actions cron is "best effort" — runs can
+# lag during high load — but typical latency is well under the 5-min
+# tick, which is good enough for "page updates within minutes of a
+# game going final."
+on:
+  schedule:
+    - cron: '*/5 22-23 * * *'
+    - cron: '*/5 0-7 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Hit /api/refresh
+        env:
+          DEPLOYMENT_URL: ${{ vars.DEPLOYMENT_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$DEPLOYMENT_URL" ]; then
+            echo "::error::Set repo variable DEPLOYMENT_URL (e.g. https://nba-boxscore.vercel.app)"
+            exit 1
+          fi
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::error::Set repo secret CRON_SECRET (must match Vercel env var)"
+            exit 1
+          fi
+          http_code=$(curl -sS -o /tmp/body -w "%{http_code}" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "$DEPLOYMENT_URL/api/refresh")
+          echo "HTTP $http_code"
+          cat /tmp/body | head -c 4000
+          echo
+          # 200 = clean, 207 = partial (one league failed) — both acceptable
+          if [ "$http_code" != "200" ] && [ "$http_code" != "207" ]; then
+            exit 1
+          fi

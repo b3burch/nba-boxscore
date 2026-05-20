@@ -70,30 +70,47 @@ async function buildLeagueSnapshot(
   const schedule = await getSeasonSchedule(league);
   await sleep(500);
 
+  // Pull live scoreboard so we can detect completions in real time.
   let todayGames: ScheduleGame[] = [];
+  let todayCompletedIds: string[] = [];
   try {
     const sb = await getTodaysScoreboard(league);
-    todayGames = sb.scoreboard.gameDate === dateEt
-      ? (sb.scoreboard.games as unknown as ScheduleGame[])
-      : findGamesOnDate(schedule, dateEt);
+    if (sb.scoreboard.gameDate === dateEt) {
+      todayGames = sb.scoreboard.games as unknown as ScheduleGame[];
+      todayCompletedIds = todayGames
+        .filter((g) => g.gameStatus === 3 && !isConditionalPlaceholder(g))
+        .map((g) => g.gameId);
+    } else {
+      todayGames = findGamesOnDate(schedule, dateEt);
+    }
   } catch (e) {
     errors.push(`${league} today scoreboard: ${String(e)}`);
     todayGames = findGamesOnDate(schedule, dateEt);
   }
   todayGames = todayGames.filter((g) => !isConditionalPlaceholder(g));
 
-  const yesterdayScheduleGames = findGamesOnDate(schedule, ydayEt).filter(
-    (g) => g.gameStatus === 3 && !isConditionalPlaceholder(g)
-  );
+  // Coverage slate: today once any of today's games has gone final, else yesterday.
+  // This flips the newspaper forward as soon as the first game of the night ends.
+  let coverageDate: string;
+  let coverageGameIds: string[];
+  if (todayCompletedIds.length > 0) {
+    coverageDate = dateEt;
+    coverageGameIds = todayCompletedIds;
+  } else {
+    coverageDate = ydayEt;
+    coverageGameIds = findGamesOnDate(schedule, ydayEt)
+      .filter((g) => g.gameStatus === 3 && !isConditionalPlaceholder(g))
+      .map((g) => g.gameId);
+  }
 
   const yesterdayGames: BoxScoreGame[] = [];
-  for (const g of yesterdayScheduleGames) {
+  for (const gameId of coverageGameIds) {
     await sleep(1100);
     try {
-      const bs = await getBoxScore(g.gameId, league);
+      const bs = await getBoxScore(gameId, league);
       yesterdayGames.push(bs.game);
     } catch (e) {
-      errors.push(`${league} boxscore ${g.gameId}: ${String(e)}`);
+      errors.push(`${league} boxscore ${gameId}: ${String(e)}`);
     }
   }
 
@@ -122,7 +139,7 @@ async function buildLeagueSnapshot(
     league,
     generatedAt: now.toISOString(),
     dateEt,
-    yesterdayEt: ydayEt,
+    yesterdayEt: coverageDate,
     isOffSeason: isOffSeason(now),
     seasonString: currentSeasonString(now),
     standings,

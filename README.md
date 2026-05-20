@@ -1,19 +1,23 @@
 # The Daily Box — NBA
 
-A once-a-day NBA box-score newspaper. Renders yesterday's games in the NBA Game Book layout, plus standings, daily leaders, and today's slate. Inspired by [boxscore.email/mlb](https://boxscore.email/mlb).
+An NBA box-score newspaper that rolls over as games end, not on a calendar boundary. Renders the **current slate** (yesterday by default, today once today's first game has gone final) in the NBA Game Book layout, plus standings, daily leaders, and today's slate. Inspired by [boxscore.email/mlb](https://boxscore.email/mlb).
 
-Built with Next.js 16 (App Router) + TypeScript, hosted on Vercel free tier, daily refresh via Vercel Cron, snapshot stored in Vercel Blob.
+Built with Next.js 16 (App Router) + TypeScript, hosted on Vercel free tier. Refresh is driven by GitHub Actions during NBA game hours (every 5 min) plus a Vercel Cron backstop daily. Snapshot stored in Vercel Blob.
 
 ## How it works
 
-1. **12:00 UTC daily** (5am AZ) Vercel Cron hits `/api/refresh`.
+1. **Refresh trigger**: GitHub Actions hits `/api/refresh` every 5 minutes from ~6pm ET through ~3am ET (see `.github/workflows/refresh.yml`). A daily Vercel Cron at 09:00 UTC also fires as a backstop.
 2. The route fetches from `cdn.nba.com`:
    - `staticData/scheduleLeagueV2.json` — full season schedule (drives standings + today/yesterday slates)
-   - `liveData/boxscore/boxscore_{gameId}.json` — for each completed game yesterday
-3. It assembles a `DailySnapshot` and writes it to Vercel Blob (`snapshots/latest.json` + dated copy).
-4. The home page (`/`) is a server component that reads `latest.json` and renders.
+   - `liveData/scoreboard/todaysScoreboard_00.json` — live status, used to detect completions
+   - `liveData/boxscore/boxscore_{gameId}.json` — for each completed game in the coverage slate
+3. **Coverage slate** = today if any of today's games has `gameStatus === 3` (Final), otherwise yesterday. This is the flip that "starts a new day" the moment the first game of the night ends.
+4. It assembles a `DailySnapshot` and writes it to Vercel Blob (`snapshots/latest.json` + dated copy).
+5. The home page (`/`) is a server component that reads `latest.json` and renders.
 
-If a refresh fails partway, the previous day's snapshot keeps serving.
+If a refresh fails partway, the previous snapshot keeps serving.
+
+The `yesterdayGames` / `yesterdayEt` snapshot fields are kept for compatibility but now mean "coverage slate" rather than literally yesterday.
 
 ## Local dev
 
@@ -37,12 +41,23 @@ Without `BLOB_READ_WRITE_TOKEN` set, the refresh route writes to `.snapshots/lat
 6. **Manually trigger the first refresh:** Vercel dashboard → Cron Jobs → Run. Confirm the snapshot writes to Blob.
 7. **Load the deployed URL** to confirm everything renders.
 
+## Wiring up the 5-minute refresh
+
+Vercel Hobby caps Vercel Cron at one daily run, so the in-game cadence is driven by GitHub Actions instead.
+
+1. In GitHub: Repo → Settings → Secrets and variables → Actions.
+2. **Variable** `DEPLOYMENT_URL` = the Vercel URL (e.g. `https://nba-boxscore.vercel.app` or the custom domain). No trailing slash.
+3. **Secret** `CRON_SECRET` = same value you set in Vercel env vars.
+4. Workflow `.github/workflows/refresh.yml` runs `*/5` UTC from 22:00–07:59 (NBA evening through end of West-coast OTs). You can also fire it on demand via Actions → Refresh box scores → Run workflow.
+
+Note: GitHub Actions scheduled runs are best-effort and can lag by a few minutes under load; typical latency from "game goes final" → "page reflects it" is 3–8 minutes.
+
 ## Project layout
 
 ```
 app/
   layout.tsx, page.tsx
-  api/refresh/route.ts       — daily orchestration (Node runtime)
+  api/refresh/route.ts       — refresh orchestration (Node runtime)
   globals.css                — newspaper + gamebook styles
 components/
   Headline.tsx               — masthead + date
