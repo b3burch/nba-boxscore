@@ -1,3 +1,5 @@
+> **Retired 2026-09-29.** Since 2026-06-16, cdn.nba.com has returned Akamai "Access Denied" (403) to every server and scripted request, and cdn.wnba.com returns an HTML page in place of JSON. The site sat frozen on June 16 data until it was taken down. No free, licensed source of per-player box scores was found for the 2026-27 season, so the project was scrapped. The Vercel project was deleted and this repo is archived. If it is ever revived, balldontlie's $9.99/mo tier has per-game player stats. Notes live in Bret's Daily Box project brief.
+
 # The Daily Box — NBA
 
 An NBA box-score newspaper that rolls over as games end, not on a calendar boundary. Renders the **current slate** (yesterday by default, today once today's first game has gone final) in the NBA Game Book layout, plus standings, daily leaders, and today's slate. Inspired by [boxscore.email/mlb](https://boxscore.email/mlb).
